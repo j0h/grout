@@ -48,7 +48,7 @@ func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	route.handler.ServeHTTP(rw, req)
 }
 
-//
+// GetRouteByPath and match it against included patterns
 func (r *Router) GetRouteByPath(path string) *Route {
 	for _, route := range r.registeredRoutes {
 		//if matched, _ := regexp.Match(route.GetPattern(), []byte(path)); matched {
@@ -56,11 +56,6 @@ func (r *Router) GetRouteByPath(path string) *Route {
 			return route
 		}
 	}
-	return nil
-}
-
-//
-func (r *Router) GetRoute(name string) *Route {
 	return nil
 }
 
@@ -85,7 +80,7 @@ func (r *Router) CreateRoute(name, pattern string, handlerFunc http.HandlerFunc,
 	return newRoute
 }
 
-//
+// AddRouteDecorator and apply it to existing routes
 func (r *Router) AddRouteDecorator(decorator RouteDecorator) {
 	r.routeDecorators = append(r.routeDecorators, decorator)
 	// apply it to all current routes
