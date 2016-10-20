@@ -3,7 +3,6 @@ package gorouter
 import (
 	"log"
 	"net/http"
-	"regexp"
 )
 
 // Router takes care of matching the routes as well as attaching and executing middlewares/decorators.
@@ -50,12 +49,14 @@ func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
+	route.handlerFunc(rw, req)
 }
 
 //
 func (r *Router) GetRouteByPath(path string) *Route {
 	for _, route := range r.registeredRoutes {
-		if matched, _ := regexp.Match(route.GetPattern(), []byte(path)); matched {
+		//if matched, _ := regexp.Match(route.GetPattern(), []byte(path)); matched {
+		if route.GetPattern() == path {
 			return route
 		}
 	}
@@ -114,4 +115,9 @@ func (r *Router) CreateRoute(name, pattern string, handlerFunc http.HandlerFunc,
 	newRoute := &Route{name: name, methods: methods, pattern: pattern, handlerFunc: handlerFunc}
 	r.AddRoute(newRoute)
 	return newRoute
+}
+
+//
+func (r *Router) AddRouteDecorator(decorator RouteDecorator) {
+	r.routeDecorators = append(r.routeDecorators, &decorator)
 }
