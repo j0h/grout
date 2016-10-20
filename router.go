@@ -1,23 +1,18 @@
 package gorouter
 
-import (
-	"log"
-	"net/http"
-)
+import "net/http"
 
 // Router takes care of matching the routes as well as attaching and executing middlewares/decorators.
 type Router struct {
-	routeDecorators []*RouteDecorator
+	routeDecorators []RouteDecorator
 
 	registeredRoutes  []*Route
-	routesChanged     bool
 	activeMiddlewares []*Middleware
 }
 
 // NewRouter creates a new router handling routes.
 func NewRouter() *Router {
 	router := &Router{}
-	router.ReloadRoutes()
 
 	return router
 }
@@ -29,6 +24,7 @@ func (r *Router) Serve(addr string) error {
 		Addr:    addr,
 		Handler: r,
 	}
+
 	return server.ListenAndServe()
 }
 
@@ -49,7 +45,7 @@ func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-	route.handlerFunc(rw, req)
+	route.handler.ServeHTTP(rw, req)
 }
 
 //
@@ -61,37 +57,6 @@ func (r *Router) GetRouteByPath(path string) *Route {
 		}
 	}
 	return nil
-}
-
-//
-func (r *Router) ReloadRoutes() {
-	if !r.routesChanged {
-		return
-	}
-
-	log.Println("Loading routes...")
-
-	for _, route := range r.registeredRoutes {
-		internalRoute := r.GetRoute(route.GetName())
-		var handler http.Handler = route.GetHandlerFunc() // implicit interfaces are confusing
-
-		for _, h := range r.routeDecorators {
-			handler = (*h)(handler, *route)
-		}
-
-		if internalRoute == nil {
-			// this route is new, register new one
-			internalRoute = r.NewRoute()
-			r.AddRoute(internalRoute)
-		}
-		internalRoute.
-			SetName(route.GetName()).
-			SetMethods(route.GetMethods()...).
-			SetPattern(route.GetPattern()).
-			SetHandlerFunc(route.GetHandlerFunc())
-	}
-
-	r.routesChanged = false
 }
 
 //
@@ -107,17 +72,24 @@ func (r *Router) NewRoute() *Route {
 // AddRoute r to the list of available routes. r is online afterwards. This is not threadsafe!
 func (r *Router) AddRoute(route *Route) {
 	r.registeredRoutes = append(r.registeredRoutes, route)
-	r.routesChanged = true
+	// apply current decorators
+	for _, decorator := range r.routeDecorators {
+		route.SetHandler(decorator(route.GetHandler(), route))
+	}
 }
 
 // CreateRoute creates a new Route and adds it to the router
 func (r *Router) CreateRoute(name, pattern string, handlerFunc http.HandlerFunc, methods ...string) *Route {
-	newRoute := &Route{name: name, methods: methods, pattern: pattern, handlerFunc: handlerFunc}
+	newRoute := &Route{name: name, methods: methods, pattern: pattern, handler: handlerFunc}
 	r.AddRoute(newRoute)
 	return newRoute
 }
 
 //
 func (r *Router) AddRouteDecorator(decorator RouteDecorator) {
-	r.routeDecorators = append(r.routeDecorators, &decorator)
+	r.routeDecorators = append(r.routeDecorators, decorator)
+	// apply it to all current routes
+	for _, route := range r.registeredRoutes {
+		route.SetHandler(decorator(route.GetHandler(), route))
+	}
 }

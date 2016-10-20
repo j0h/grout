@@ -3,14 +3,14 @@ package gorouter
 import "net/http"
 
 // RouteDecorator wrapping the an initial handler. This way the handlers get decorated and we can provide more information
-type RouteDecorator func(handler http.Handler, r Route) http.Handler
+type RouteDecorator func(handler http.Handler, r *Route) http.Handler
 
 // Route definition
 type Route struct {
-	name        string
-	methods     []string
-	pattern     string
-	handlerFunc http.HandlerFunc
+	name    string
+	methods []string
+	pattern string
+	handler http.Handler
 }
 
 //
@@ -47,12 +47,12 @@ func (r *Route) GetPattern() string {
 }
 
 //
-func (r *Route) SetHandlerFunc(handlerFunc *http.HandlerFunc) *Route {
-	r.handlerFunc = *handlerFunc
+func (r *Route) SetHandler(handler http.Handler) *Route {
+	r.handler = handler
 	return r
 }
 
 //
-func (r *Route) GetHandlerFunc() *http.HandlerFunc {
-	return &r.handlerFunc
+func (r *Route) GetHandler() http.Handler {
+	return r.handler
 }
