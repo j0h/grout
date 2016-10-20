@@ -4,22 +4,33 @@ import (
 	"log"
 	"net/http"
 	"regexp"
-
-	"github.com/gorilla/mux"
 )
 
-//
+// Router takes care of matching the routes as well as attaching and executing middlewares/decorators.
 type Router struct {
-	router *mux.Router
+	routeDecorators []*RouteDecorator
+
+	registeredRoutes  []*Route
+	routesChanged     bool
+	activeMiddlewares []*Middleware
 }
 
 // NewRouter creates a new router handling routes.
 func NewRouter() *Router {
-	muxRouter := mux.NewRouter().StrictSlash(true)
-	router := &Router{router: muxRouter}
+	router := &Router{}
 	router.ReloadRoutes()
 
 	return router
+}
+
+// Serve launches an http server listening on addr. If addr is empty it will listen on :http
+// Attention: This is up to change for ssl support and probably some more...
+func (r *Router) Serve(addr string) error {
+	server := http.Server{
+		Addr:    addr,
+		Handler: r,
+	}
+	return server.ListenAndServe()
 }
 
 func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
@@ -31,22 +42,21 @@ func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	for _, middleware := range activeMiddlewares {
-		err := (*middleware).handler(req, route)
+	for _, middleware := range r.activeMiddlewares {
+		err := middleware.handler(req, route)
 		if err != nil {
 			// send error to client
 			rw.Write([]byte(err.Error()))
 			return
 		}
 	}
-	r.router.ServeHTTP(rw, req)
 }
 
 //
 func (r *Router) GetRouteByPath(path string) *Route {
-	for _, route := range registeredRoutes {
+	for _, route := range r.registeredRoutes {
 		if matched, _ := regexp.Match(route.GetPattern(), []byte(path)); matched {
-			return &route
+			return route
 		}
 	}
 	return nil
@@ -54,36 +64,47 @@ func (r *Router) GetRouteByPath(path string) *Route {
 
 //
 func (r *Router) ReloadRoutes() {
-	if !routesChanged {
+	if !r.routesChanged {
 		return
 	}
 
 	log.Println("Loading routes...")
 
-	for _, route := range registeredRoutes {
-		internalRoute := r.router.GetRoute(route.GetName())
+	for _, route := range r.registeredRoutes {
+		internalRoute := r.GetRoute(route.GetName())
 		var handler http.Handler = route.GetHandlerFunc() // implicit interfaces are confusing
 
-		for _, h := range routeDecorators {
-			handler = h(handler, route)
+		for _, h := range r.routeDecorators {
+			handler = (*h)(handler, *route)
 		}
 
 		if internalRoute == nil {
 			// this route is new, register new one
-			r.router.
-				Methods(route.GetMethod()).
-				Path(route.GetPattern()).
-				Name(route.GetName()).
-				Handler(route.GetHandlerFunc())
-		} else {
-			// this route is existing, adjust it - however, it is not clear whether these changes have any influence on the underlying routing
-			internalRoute.
-				Name(route.GetName()).
-				Methods(route.GetMethod()).
-				Path(route.GetPattern()).
-				Handler(route.GetHandlerFunc())
+			internalRoute = r.NewRoute()
+			r.AddRoute(internalRoute)
 		}
+		internalRoute.
+			SetName(route.GetName()).
+			SetMethods(route.GetMethods()...).
+			SetPattern(route.GetPattern()).
+			SetHandlerFunc(route.GetHandlerFunc())
 	}
 
-	routesChanged = false
+	r.routesChanged = false
+}
+
+//
+func (r *Router) GetRoute(name string) *Route {
+	return nil
+}
+
+// NewRoute returns a blank route. The route is not added to the set of active routes, yet.
+func (r *Router) NewRoute() *Route {
+	return &Route{}
+}
+
+// AddRoute r to the list of available routes. r is online afterwards. This is not threadsafe!
+func (r *Router) AddRoute(route *Route) {
+	r.registeredRoutes = append(r.registeredRoutes, route)
+	r.routesChanged = true
 }

@@ -1,39 +1,27 @@
 package gorouter
 
-import (
-	"net/http"
-
-	"github.com/gorilla/mux"
-)
+import "net/http"
 
 // RouteDecorator wrapping the an initial handler. This way the handlers get decorated and we can provide more information
 type RouteDecorator func(handler http.Handler, r Route) http.Handler
 
-var routeDecorators = []RouteDecorator{}
-
 // Route definition
 type Route struct {
 	name        string
-	method      string
+	methods     []string
 	pattern     string
 	handlerFunc http.HandlerFunc
-	innerROute  *mux.Route
 }
 
 // CreateRoute creates a new Route
-func CreateRoute(name, method, pattern string, handlerFunc http.HandlerFunc) *Route {
-	return &Route{name: name, method: method, pattern: pattern, handlerFunc: handlerFunc}
-}
-
-// Add r to the list of available routes. r is online afterwards. This is not threadsafe!
-func (r *Route) Add() {
-	registeredRoutes = append(registeredRoutes, *r)
-	routesChanged = true
+func CreateRoute(name, pattern string, handlerFunc http.HandlerFunc, methods ...string) *Route {
+	return &Route{name: name, methods: methods, pattern: pattern, handlerFunc: handlerFunc}
 }
 
 //
-func (r *Route) SetName(name string) {
+func (r *Route) SetName(name string) *Route {
 	r.name = name
+	return r
 }
 
 //
@@ -42,18 +30,20 @@ func (r *Route) GetName() string {
 }
 
 //
-func (r *Route) SetMethod(method string) {
-	r.method = method
+func (r *Route) SetMethods(methods ...string) *Route {
+	r.methods = methods
+	return r
 }
 
 //
-func (r *Route) GetMethod() string {
-	return r.method
+func (r *Route) GetMethods() []string {
+	return r.methods
 }
 
 //
-func (r *Route) SetPattern(pattern string) {
+func (r *Route) SetPattern(pattern string) *Route {
 	r.pattern = pattern
+	return r
 }
 
 //
@@ -62,14 +52,12 @@ func (r *Route) GetPattern() string {
 }
 
 //
-func (r *Route) SetHandlerFunc(handlerFunc http.HandlerFunc) {
-	r.handlerFunc = handlerFunc
+func (r *Route) SetHandlerFunc(handlerFunc *http.HandlerFunc) *Route {
+	r.handlerFunc = *handlerFunc
+	return r
 }
 
 //
 func (r *Route) GetHandlerFunc() *http.HandlerFunc {
 	return &r.handlerFunc
 }
-
-var registeredRoutes = []Route{}
-var routesChanged = true

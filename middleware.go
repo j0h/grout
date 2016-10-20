@@ -13,11 +13,9 @@ type Middleware struct {
 	handler MiddlewareHandler
 }
 
-var activeMiddlewares = []*Middleware{}
-
 // AddMiddleware adds an middleware to the set of active middlewares intercepting an incoming request. An id is returned.
-func AddMiddleware(name string, mw MiddlewareHandler) int {
-	activeMiddlewares = append(activeMiddlewares, &Middleware{id: nextID, name: name, handler: mw})
+func (r *Router) AddMiddleware(name string, mw MiddlewareHandler) int {
+	r.activeMiddlewares = append(r.activeMiddlewares, &Middleware{id: nextID, name: name, handler: mw})
 	nextID++
 	return nextID - 1
 }
