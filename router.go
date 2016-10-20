@@ -108,3 +108,10 @@ func (r *Router) AddRoute(route *Route) {
 	r.registeredRoutes = append(r.registeredRoutes, route)
 	r.routesChanged = true
 }
+
+// CreateRoute creates a new Route and adds it to the router
+func (r *Router) CreateRoute(name, pattern string, handlerFunc http.HandlerFunc, methods ...string) *Route {
+	newRoute := &Route{name: name, methods: methods, pattern: pattern, handlerFunc: handlerFunc}
+	r.AddRoute(newRoute)
+	return newRoute
+}

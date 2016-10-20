@@ -13,11 +13,6 @@ type Route struct {
 	handlerFunc http.HandlerFunc
 }
 
-// CreateRoute creates a new Route
-func CreateRoute(name, pattern string, handlerFunc http.HandlerFunc, methods ...string) *Route {
-	return &Route{name: name, methods: methods, pattern: pattern, handlerFunc: handlerFunc}
-}
-
 //
 func (r *Route) SetName(name string) *Route {
 	r.name = name
