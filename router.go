@@ -53,8 +53,7 @@ func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		res.Status = 500
 	}
 
-	res.write()
-	if route != nil {
+	if route != nil && err == nil {
 		route.handler.Run(req, &res)
 	}
 

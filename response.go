@@ -10,19 +10,18 @@ type Response struct {
 	// Header fields
 	Header map[string]string
 
-	rawWriter http.ResponseWriter
+	rawWriter     http.ResponseWriter
+	headerWritten bool
 }
 
 func (res *Response) Write(data []byte) (int, error) {
+	if !res.headerWritten {
+		res.writeHeaderData()
+	}
 	return res.rawWriter.Write(data)
 }
 
-// write response to the client
-func (res *Response) write() {
-	res.writeHeader()
-}
-
-func (res *Response) writeHeader() {
+func (res *Response) writeHeaderData() {
 	for key, val := range res.Header {
 		res.rawWriter.Header().Add(key, val)
 	}
