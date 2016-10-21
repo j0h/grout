@@ -63,7 +63,7 @@ func (r *Router) NewRoute() *Route {
 	return &Route{}
 }
 
-// AddRoute r to the list of available routes. r is online afterwards. This is not threadsafe!
+// AddRoute r to the list of available routes. r is online afterwards.
 func (r *Router) AddRoute(route *Route) {
 	r.registeredRoutes = append(r.registeredRoutes, route)
 	// apply current decorators
