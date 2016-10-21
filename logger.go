@@ -8,7 +8,7 @@ import (
 
 // LoggerRouteDecorator is a basic decoration of a route. Is is an example as well as a useful tool.
 // Add this to the set of decorators if you want to have a log of the form
-// [<Method>] <Name>:<RequestURI> <elapsed time>
+// [<Method> - <StatusCode>] <Name>:<RequestURI> <elapsed time>
 func LoggerRouteDecorator(innerHandler RouteHandler, route *Route) RouteHandler {
 	return RouteHandlerFunc(func(req *http.Request, res *Response) {
 		start := time.Now()
@@ -16,10 +16,11 @@ func LoggerRouteDecorator(innerHandler RouteHandler, route *Route) RouteHandler 
 		innerHandler.Run(req, res)
 
 		log.Printf(
-			"[%s]\t%s\t%s",
+			"[%s - %s]\t%s\t%s",
 			req.Method,
 			req.RequestURI,
 			time.Since(start),
+			res.Status,
 		)
 	})
 }
