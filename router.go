@@ -1,6 +1,9 @@
 package gorouter
 
-import "net/http"
+import (
+	"net/http"
+	"time"
+)
 
 // Router takes care of matching the routes as well as attaching and executing middlewares/decorators.
 type Router struct {
@@ -32,6 +35,8 @@ func (r *Router) Serve(addr string) error {
 }
 
 func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	start := time.Now()
+
 	res := NewResponse(rw)
 	route := r.GetRouteByPath(req.URL.Path)
 	var err error
@@ -52,6 +57,8 @@ func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if route != nil {
 		route.handler.Run(req, &res)
 	}
+
+	printLog(req.Method, req.RequestURI, time.Since(start), res.Status)
 }
 
 // GetRouteByPath and match it against included patterns

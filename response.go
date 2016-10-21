@@ -23,10 +23,10 @@ func (res *Response) write() {
 }
 
 func (res *Response) writeHeader() {
-	res.rawWriter.WriteHeader(res.Status)
 	for key, val := range res.Header {
 		res.rawWriter.Header().Add(key, val)
 	}
+	res.rawWriter.WriteHeader(res.Status)
 }
 
 // NewResponse creates a new Response object and sets the status to 200
