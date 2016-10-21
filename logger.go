@@ -16,11 +16,11 @@ func LoggerRouteDecorator(innerHandler RouteHandler, route *Route) RouteHandler 
 		innerHandler.Run(req, res)
 
 		log.Printf(
-			"[%s - %s]\t%s\t%s",
+			"[%s - %d]\t%s\t%s",
 			req.Method,
+			res.Status,
 			req.RequestURI,
 			time.Since(start),
-			res.Status,
 		)
 	})
 }

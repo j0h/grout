@@ -29,6 +29,7 @@ func (r *Router) AddMiddleware(name string, mw MiddlewareHandler) *Middleware {
 func checkRouteValidity(req *http.Request, res *Response, route *Route) error {
 	if route == nil {
 		// issue 404
+		res.Status = 404
 		return errors.New("Could not find resource.")
 	}
 	return nil

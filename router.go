@@ -15,6 +15,7 @@ type Router struct {
 // NewRouter creates a new router handling routes.
 func NewRouter() *Router {
 	router := &Router{activeMiddlewares: make(map[int]*Middleware)}
+	router.AddMiddleware("__routeValidityCheck__", checkRouteValidity)
 
 	return router
 }
@@ -32,19 +33,25 @@ func (r *Router) Serve(addr string) error {
 
 func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	res := NewResponse(rw)
-	rw.Header().Set("Access-Control-Allow-Origin", "*") // available to everyone
 	route := r.GetRouteByPath(req.URL.Path)
-
+	var err error
 	for _, middleware := range r.activeMiddlewares {
-		err := middleware.handler(req, &res, route)
+		err = middleware.handler(req, &res, route)
 		if err != nil {
 			// send error to client
-			rw.Write([]byte(err.Error()))
+			res.Write([]byte(err.Error()))
 			break
 		}
 	}
+
+	if err != nil && res.Status == 200 {
+		res.Status = 500
+	}
+
 	res.write()
-	route.handler.Run(req, &res)
+	if route != nil {
+		route.handler.Run(req, &res)
+	}
 }
 
 // GetRouteByPath and match it against included patterns
@@ -73,7 +80,7 @@ func (r *Router) AddRoute(route *Route) {
 }
 
 // CreateRoute creates a new Route and adds it to the router
-func (r *Router) CreateRoute(name, pattern string, handlerFunc RouteHandler, methods ...string) *Route {
+func (r *Router) CreateRoute(name, pattern string, handlerFunc RouteHandlerFunc, methods ...string) *Route {
 	newRoute := &Route{name: name, methods: methods, pattern: pattern, handler: handlerFunc}
 	r.AddRoute(newRoute)
 	return newRoute
