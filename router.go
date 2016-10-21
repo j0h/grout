@@ -7,7 +7,9 @@ type Router struct {
 	routeDecorators []RouteDecorator
 
 	registeredRoutes  []*Route
-	activeMiddlewares []*Middleware
+	activeMiddlewares map[int]*Middleware
+
+	middlewareIDCounter int
 }
 
 // NewRouter creates a new router handling routes.
@@ -29,23 +31,20 @@ func (r *Router) Serve(addr string) error {
 }
 
 func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	res := NewResponse(rw)
 	rw.Header().Set("Access-Control-Allow-Origin", "*") // available to everyone
 	route := r.GetRouteByPath(req.URL.Path)
-	if route == nil {
-		rw.WriteHeader(404)
-		rw.Write([]byte("404"))
-		return
-	}
 
 	for _, middleware := range r.activeMiddlewares {
-		err := middleware.handler(req, route)
+		err := middleware.handler(req, &res, route)
 		if err != nil {
 			// send error to client
 			rw.Write([]byte(err.Error()))
-			return
+			break
 		}
 	}
-	route.handler.ServeHTTP(rw, req)
+	res.write()
+	route.handler.Run(req, &res)
 }
 
 // GetRouteByPath and match it against included patterns
@@ -74,7 +73,7 @@ func (r *Router) AddRoute(route *Route) {
 }
 
 // CreateRoute creates a new Route and adds it to the router
-func (r *Router) CreateRoute(name, pattern string, handlerFunc http.HandlerFunc, methods ...string) *Route {
+func (r *Router) CreateRoute(name, pattern string, handlerFunc RouteHandler, methods ...string) *Route {
 	newRoute := &Route{name: name, methods: methods, pattern: pattern, handler: handlerFunc}
 	r.AddRoute(newRoute)
 	return newRoute

@@ -9,16 +9,16 @@ import (
 // LoggerRouteDecorator is a basic decoration of a route. Is is an example as well as a useful tool.
 // Add this to the set of decorators if you want to have a log of the form
 // [<Method>] <Name>:<RequestURI> <elapsed time>
-func LoggerRouteDecorator(innerHandler http.Handler, route *Route) http.Handler {
-	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+func LoggerRouteDecorator(innerHandler RouteHandler, route *Route) RouteHandler {
+	return RouteHandlerFunc(func(req *http.Request, res *Response) {
 		start := time.Now()
 
-		innerHandler.ServeHTTP(rw, r)
+		innerHandler.Run(req, res)
 
 		log.Printf(
 			"[%s]\t%s\t%s",
-			r.Method,
-			r.RequestURI,
+			req.Method,
+			req.RequestURI,
 			time.Since(start),
 		)
 	})
