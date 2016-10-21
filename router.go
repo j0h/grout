@@ -14,7 +14,7 @@ type Router struct {
 
 // NewRouter creates a new router handling routes.
 func NewRouter() *Router {
-	router := &Router{}
+	router := &Router{activeMiddlewares: make(map[int]*Middleware)}
 
 	return router
 }
