@@ -47,7 +47,7 @@ func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	res := NewResponse(rw)
 	route, match := r.GetRouteByPath(req.URL.Path, req.Method)
-	request := convertToRequest(req, *match)
+	request := convertToRequest(req, match)
 
 	var err error
 	for _, middleware := range r.activeMiddlewares {
@@ -115,7 +115,10 @@ func (r *Router) AddRouteDecorator(decorator RouteDecorator) {
 	}
 }
 
-func convertToRequest(req *http.Request, match MatchResult) Request {
+func convertToRequest(req *http.Request, match *MatchResult) Request {
+	if req == nil {
+		panic("Cannot convert nil http.Request")
+	}
 	return Request{
 		Body:        req.Body,
 		MatchResult: match,

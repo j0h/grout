@@ -8,6 +8,6 @@ import (
 // Request is holding all information like parameter matching and body content
 type Request struct {
 	Body        io.ReadCloser
-	MatchResult MatchResult
+	MatchResult *MatchResult
 	HTTPRequest *http.Request
 }

@@ -28,6 +28,11 @@ func (res *Response) writeHeaderData() {
 	res.rawWriter.WriteHeader(res.Status)
 }
 
+//
+func (res *Response) SetCookie(c *http.Cookie) {
+	http.SetCookie(res.rawWriter, c)
+}
+
 // NewResponse creates a new Response object and sets the status to 200
 func NewResponse(rw http.ResponseWriter) Response {
 	return Response{Status: 200, Header: make(map[string]string), rawWriter: rw}
