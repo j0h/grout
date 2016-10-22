@@ -1,4 +1,4 @@
-package gorouter
+package grout
 
 // RouteDecorator wrapping the an initial handler. This way the handlers get decorated and we can provide more information
 type RouteDecorator func(handler RouteHandler, r *Route) RouteHandler
