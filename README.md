@@ -1,3 +1,4 @@
+[![GoDoc](https://godoc.org/github.com/j0h/grout?status.svg)](https://godoc.org/github.com/j0h/grout)
 ## grout
 Grout is a simple router written in Go which supports middlewares and route decoration.
 
