@@ -9,5 +9,5 @@ import (
 type Request struct {
 	Body        io.ReadCloser
 	MatchResult MatchResult
-	httpRequest *http.Request
+	HTTPRequest *http.Request
 }

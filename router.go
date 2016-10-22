@@ -119,6 +119,6 @@ func convertToRequest(req *http.Request, match MatchResult) Request {
 	return Request{
 		Body:        req.Body,
 		MatchResult: match,
-		httpRequest: req,
+		HTTPRequest: req,
 	}
 }
