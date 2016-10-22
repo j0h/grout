@@ -47,10 +47,11 @@ func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	res := NewResponse(rw)
 	route, match := r.GetRouteByPath(req.URL.Path, req.Method)
+	request := convertToRequest(req, *match)
 
 	var err error
 	for _, middleware := range r.activeMiddlewares {
-		err = middleware.handler(req, &res, route)
+		err = middleware.handler(&request, &res, route)
 		if err != nil {
 			// send error to client
 			res.Write([]byte(err.Error()))
@@ -63,7 +64,6 @@ func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if match != nil && err == nil {
-		request := convertToRequest(req, *match)
 		route.handler.Run(&request, &res)
 	}
 
