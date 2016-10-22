@@ -5,20 +5,28 @@ import (
 	"time"
 )
 
+var supportedMethods = []string{"GET", "POST", "PUT", "DELETE", "UPDATE"}
+
 // Router takes care of matching the routes as well as attaching and executing middlewares/decorators.
 type Router struct {
 	routeDecorators []RouteDecorator
 
-	registeredRoutes  []*Route
+	registeredRoutes  map[string][]*Route
 	activeMiddlewares map[int]*Middleware
 
 	middlewareIDCounter int
+
+	RouteMatcher Matcher
 }
 
 // NewRouter creates a new router handling routes.
 func NewRouter() *Router {
-	router := &Router{activeMiddlewares: make(map[int]*Middleware)}
-	router.AddMiddleware("__routeValidityCheck__", checkRouteValidity)
+	router := &Router{
+		activeMiddlewares: make(map[int]*Middleware),
+		registeredRoutes:  make(map[string][]*Route),
+		RouteMatcher:      getDefaultMatcher(),
+	}
+	router.AddMiddleware("_grout_routeValidityCheck__", checkRouteValidity)
 
 	return router
 }
@@ -38,7 +46,8 @@ func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	start := time.Now()
 
 	res := NewResponse(rw)
-	route := r.GetRouteByPath(req.URL.Path)
+	route, match := r.GetRouteByPath(req.URL.Path, req.Method)
+
 	var err error
 	for _, middleware := range r.activeMiddlewares {
 		err = middleware.handler(req, &res, route)
@@ -53,22 +62,22 @@ func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		res.Status = 500
 	}
 
-	if route != nil && err == nil {
-		route.handler.Run(req, &res)
+	if match != nil && err == nil {
+		request := convertToRequest(req, *match)
+		route.handler.Run(&request, &res)
 	}
 
-	printLog(req.Method, req.RequestURI, time.Since(start), res.Status)
+	printLog(*req, res, time.Since(start))
 }
 
 // GetRouteByPath and match it against included patterns
-func (r *Router) GetRouteByPath(path string) *Route {
-	for _, route := range r.registeredRoutes {
-		//if matched, _ := regexp.Match(route.GetPattern(), []byte(path)); matched {
-		if route.GetPattern() == path {
-			return route
+func (r *Router) GetRouteByPath(path, method string) (*Route, *MatchResult) {
+	for _, route := range r.registeredRoutes[method] {
+		if match := r.RouteMatcher.Match(path, route); match != nil {
+			return route, match
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 // NewRoute returns a blank route. The route is not added to the set of active routes, yet.
@@ -77,18 +86,21 @@ func (r *Router) NewRoute() *Route {
 }
 
 // AddRoute r to the list of available routes. r is online afterwards.
-func (r *Router) AddRoute(route *Route) {
-	r.registeredRoutes = append(r.registeredRoutes, route)
-	// apply current decorators
-	for _, decorator := range r.routeDecorators {
-		route.SetHandler(decorator(route.GetHandler(), route))
+func (r *Router) AddRoute(route *Route, methods ...string) {
+	for _, m := range methods {
+		r.registeredRoutes[m] = append(r.registeredRoutes[m], route)
+
+		// apply current decorators
+		for _, decorator := range r.routeDecorators {
+			route.SetHandler(decorator(route.GetHandler(), route))
+		}
 	}
 }
 
 // CreateRoute creates a new Route and adds it to the router
 func (r *Router) CreateRoute(name, pattern string, handlerFunc RouteHandlerFunc, methods ...string) *Route {
 	newRoute := &Route{name: name, methods: methods, pattern: pattern, handler: handlerFunc}
-	r.AddRoute(newRoute)
+	r.AddRoute(newRoute, methods...)
 	return newRoute
 }
 
@@ -96,7 +108,17 @@ func (r *Router) CreateRoute(name, pattern string, handlerFunc RouteHandlerFunc,
 func (r *Router) AddRouteDecorator(decorator RouteDecorator) {
 	r.routeDecorators = append(r.routeDecorators, decorator)
 	// apply it to all current routes
-	for _, route := range r.registeredRoutes {
-		route.SetHandler(decorator(route.GetHandler(), route))
+	for _, m := range supportedMethods {
+		for _, route := range r.registeredRoutes[m] {
+			route.SetHandler(decorator(route.GetHandler(), route))
+		}
+	}
+}
+
+func convertToRequest(req *http.Request, match MatchResult) Request {
+	return Request{
+		Body:        req.Body,
+		MatchResult: match,
+		httpRequest: req,
 	}
 }

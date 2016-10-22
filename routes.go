@@ -1,20 +1,18 @@
 package gorouter
 
-import "net/http"
-
 // RouteDecorator wrapping the an initial handler. This way the handlers get decorated and we can provide more information
 type RouteDecorator func(handler RouteHandler, r *Route) RouteHandler
 
 // RouteHandler for a Route
 type RouteHandler interface {
-	Run(*http.Request, *Response)
+	Run(*Request, *Response)
 }
 
 // RouteHandlerFunc as specified in the RouteHandler interface
-type RouteHandlerFunc func(*http.Request, *Response)
+type RouteHandlerFunc func(*Request, *Response)
 
 //Run implements the RouteHandler interface
-func (h RouteHandlerFunc) Run(req *http.Request, res *Response) {
+func (h RouteHandlerFunc) Run(req *Request, res *Response) {
 	h(req, res)
 }
 

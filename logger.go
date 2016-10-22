@@ -2,15 +2,16 @@ package gorouter
 
 import (
 	"log"
+	"net/http"
 	"time"
 )
 
-func printLog(method, uri string, duration time.Duration, status int) {
+func printLog(req http.Request, res Response, duration time.Duration) {
 	log.Printf(
 		"[%s - %d]\t%s\t%s",
-		method,
-		status,
-		uri,
+		req.Method,
+		res.Status,
+		req.RequestURI,
 		duration,
 	)
 }
