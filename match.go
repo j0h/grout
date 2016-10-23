@@ -45,8 +45,6 @@ func DefaultMatcher(uri string, r *Route) *MatchResult {
 	uriComponents[len(uriComponents)-1] = strings.Split(uriComponents[len(uriComponents)-1], "?")[0] // throw away query
 	patternComponents := strings.Split(pattern, "/")
 
-	url.Query()
-
 	result := &MatchResult{RouteParams: make(map[string][]string), URLParams: make(map[string][]string)}
 
 	if len(uriComponents) != len(patternComponents) {
