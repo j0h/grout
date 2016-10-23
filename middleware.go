@@ -18,6 +18,7 @@ type Middleware struct {
 func (r *Router) AddMiddleware(name string, mw MiddlewareHandler) *Middleware {
 	mid := &Middleware{id: r.middlewareIDCounter, name: name, handler: mw}
 	r.activeMiddlewares[r.middlewareIDCounter] = mid
+	r.middlewareIDCounter++
 	return mid
 }
 

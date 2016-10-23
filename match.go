@@ -27,7 +27,7 @@ func getDefaultMatcher() Matcher {
 }
 
 // DefaultMatcher is up to change. It only detects url paramters and takes trailing slashes into account. A parameter is indicated by placing ":" in
-// the route. A route which can be matched is for example /user/4 if there is a route /user/:id. Afterwards there will be a mapentry for id which maps to 4
+// the route. A route which can be matched is for example /user/4 if there is a route /user/:id. Afterwards there will be a mapentry for id which maps to 4.
 func DefaultMatcher(uri string, r *Route) *MatchResult {
 	// extract route components
 	pattern := r.GetPattern()

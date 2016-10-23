@@ -26,7 +26,7 @@ func NewRouter() *Router {
 		registeredRoutes:  make(map[string][]*Route),
 		RouteMatcher:      getDefaultMatcher(),
 	}
-	router.AddMiddleware("_grout_routeValidityCheck__", checkRouteValidity)
+	router.AddMiddleware("RouteValidityCheck", checkRouteValidity)
 
 	return router
 }
@@ -44,6 +44,7 @@ func (r *Router) Serve(addr string) error {
 
 func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	start := time.Now()
+	requestLog := Log.New("RemoteAddress", req.RemoteAddr, "Method", req.Method)
 
 	res := NewResponse(rw)
 	route, match := r.GetRouteByPath(req.URL.Path, req.Method)
@@ -51,6 +52,7 @@ func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	var err error
 	for _, middleware := range r.activeMiddlewares {
+		Log.Debug("Executing middleware " + middleware.name + "...")
 		err = middleware.handler(&request, &res, route)
 		if err != nil {
 			// send error to client
@@ -67,7 +69,7 @@ func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		route.handler.Run(&request, &res)
 	}
 
-	printLog(*req, res, time.Since(start))
+	requestLog.Info(req.RequestURI, "Duration", time.Since(start), "StatusCode", res.Status)
 }
 
 // GetRouteByPath and match it against included patterns
