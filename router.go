@@ -47,7 +47,8 @@ func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	requestLog := Log.New("RemoteAddress", req.RemoteAddr, "Method", req.Method)
 
 	res := NewResponse(rw)
-	route, match := r.GetRouteByPath(req.URL.Path, req.Method)
+
+	route, match := r.GetRouteByPath(req.RequestURI, req.Method)
 	request := convertToRequest(req, match)
 
 	var err error

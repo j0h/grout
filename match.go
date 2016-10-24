@@ -41,7 +41,7 @@ func DefaultMatcher(uri string, r *Route) *MatchResult {
 	}
 
 	pattern := r.GetPattern()
-	uriComponents := strings.Split(uri, "/")
+	uriComponents := strings.Split(url.Path, "/")
 	uriComponents[len(uriComponents)-1] = strings.Split(uriComponents[len(uriComponents)-1], "?")[0] // throw away query
 	patternComponents := strings.Split(pattern, "/")
 
